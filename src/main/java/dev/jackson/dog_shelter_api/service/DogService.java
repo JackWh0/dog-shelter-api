@@ -28,14 +28,14 @@ public class DogService {
 
     @Transactional
     public DogDTO registerDog(DogDTO dogDTO){
-        verifyIfIsAlreadyRegistred(dogDTO);
+        verifyIfIsAlreadyRegistered(dogDTO);
         verifyDogAge(dogDTO.age());
         verifyDogGender(dogDTO.gender());
 
         Dog dog = dogMapper.toModel(dogDTO);
         dog = setDataToUpperCase(dog);
         Dog registredDog = dogRepository.save(dog);
-        log.info("Registred dog: {}", registredDog.getName());
+        log.info("Registered dog: {}", registredDog.getName());
 
         return dogMapper.toDTO(registredDog);
     }
@@ -54,29 +54,30 @@ public class DogService {
 
     @Transactional
     public void deleteById(Long id) {
-        findDogRecord(id);
+        checkIfDogHasRecord(id);
         log.info("Deleting Dog's record: id={}", id);
         dogRepository.deleteById(id);
     }
 
     public void updateDogsRecord(Long id, DogDTO dogDTO) {
-        Dog dogFoundById = findDogRecord(id);
-        log.info("Updating Dog's record: id={}", id);
-        verifyDogAge(dogDTO.age());
-        verifyDogGender(dogDTO.gender());
+        if(id.equals(checkIfDogHasRecord(id).getId())) {
+            log.info("Updating Dog's record: id={}", id);
+            verifyDogAge(dogDTO.age());
+            verifyDogGender(dogDTO.gender());
 
-        Dog dog = dogMapper.toModel(dogDTO);
-        dog = setDataToUpperCase(dog);
-        dogFoundById = dog;
-        dogFoundById.setId(id);
-        dogRepository.save(dogFoundById);
+            Dog dog = dogMapper.toModel(dogDTO);
+            dog = setDataToUpperCase(dog);
+
+            dog.setId(id);
+            dogRepository.save(dog);
+        }
     }
 
-    private void verifyIfIsAlreadyRegistred(DogDTO dogDTO){
+    private void verifyIfIsAlreadyRegistered(DogDTO dogDTO){
         String dogName = dogDTO.name();
         Optional<Dog> optDog = dogRepository.findByName(dogName);
         if(optDog.isPresent()){
-            String message = String.format("%s has already been registred", optDog.get().getName());
+            String message = String.format("%s has already been registered", optDog.get().getName());
             throw new InvalidDataException(message);
         }
     }
@@ -85,8 +86,8 @@ public class DogService {
 
     private void verifyDogAge(String dogAge) {
         List<String> allowedAges = List.of("puppy", "adult", "elderly");
-        boolean isAAlloweAgeOption = allowedAges.stream().anyMatch(item -> item.equals(dogAge.toLowerCase()));
-        if(!isAAlloweAgeOption){
+        boolean isAAllowedAgeOption = allowedAges.stream().anyMatch(item -> item.equals(dogAge.toLowerCase()));
+        if(!isAAllowedAgeOption){
             throw new InvalidDataException("Incorrect age option. It must be: puppy, adult or elderly");
         }
     }
@@ -107,7 +108,7 @@ public class DogService {
         return dog;
     }
 
-    public Dog findDogRecord(Long id){
+    public Dog checkIfDogHasRecord(Long id){
             return dogRepository.findById(id).orElseThrow(() -> new DogNotFoundException("The dog's record was not found."));
     }
 }
