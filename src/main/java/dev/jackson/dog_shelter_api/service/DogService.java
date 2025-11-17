@@ -20,17 +20,15 @@ import lombok.extern.slf4j.Slf4j;
 public class DogService {
 
     private final DogRepository dogRepository;
-    private final DogMapper dogMapper;
+    private final DogMapper dogMapper = DogMapper.INSTANCE;
 
-    public DogService(DogRepository dogRepository, DogMapper dogMapper){
+    public DogService(DogRepository dogRepository){
         this.dogRepository = dogRepository;
-        this.dogMapper = dogMapper;
     }
 
     @Transactional
     public DogDTO registerDog(DogDTO dogDTO){
         verifyIfIsAlreadyRegistred(dogDTO);
-//        verifyDogSize(dogDTO.size());
         verifyDogAge(dogDTO.age());
         verifyDogGender(dogDTO.gender());
 
