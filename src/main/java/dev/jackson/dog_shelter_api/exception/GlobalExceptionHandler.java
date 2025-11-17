@@ -19,10 +19,10 @@ public class GlobalExceptionHandler {
         return new Issue(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(DogNotFoundException.class)
     public Issue DogNotFoundException(DogNotFoundException e){
-        return new Issue(e.getMessage(), HttpStatus.BAD_REQUEST);
+        return new Issue(e.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

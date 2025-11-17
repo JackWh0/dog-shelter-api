@@ -7,6 +7,6 @@ public class DogNotFoundException extends RuntimeException{
 
     public DogNotFoundException(String message){
         super(message);
-        this.issue = new Issue(message, HttpStatus.BAD_REQUEST);
+        this.issue = new Issue(message, HttpStatus.NOT_FOUND);
     }
 }
