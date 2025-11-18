@@ -4,7 +4,6 @@ import dev.jackson.dog_shelter_api.builder.DogDTOBuilder;
 import dev.jackson.dog_shelter_api.dto.DogDTO;
 import dev.jackson.dog_shelter_api.exception.DogNotFoundException;
 import dev.jackson.dog_shelter_api.service.DogService;
-import dev.jackson.dog_shelter_api.utils.JsonConvertionUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,19 +13,17 @@ import org.mockito.Mock;
 
 import static dev.jackson.dog_shelter_api.utils.JsonConvertionUtils.*;
 import static org.mockito.Mockito.*;
+
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MockMvcBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 
-import java.util.Optional;
+import java.util.Collections;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,7 +43,7 @@ public class DogControllerTest {
     private DogController dogController;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(dogController)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .setViewResolvers((s, locale) -> new MappingJackson2JsonView())
@@ -65,10 +62,10 @@ public class DogControllerTest {
         mockMvc.perform(post(API_URL_PATH)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(asJsonString(dogDTO)))
-                        .andExpect(status().isCreated())
-                        .andExpect(jsonPath("$.name", Matchers.is(dogDTO.name())))
-                        .andExpect(jsonPath("$.age", Matchers.is(dogDTO.age())))
-                        .andExpect(jsonPath("$.size", Matchers.is(dogDTO.size().toString())));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", Matchers.is(dogDTO.name())))
+                .andExpect(jsonPath("$.age", Matchers.is(dogDTO.age())))
+                .andExpect(jsonPath("$.size", Matchers.is(dogDTO.size().toString())));
     }
 
     @Test
@@ -91,7 +88,7 @@ public class DogControllerTest {
         when(dogService.findByName(dogDTO.name())).thenReturn(dogDTO);
 
         mockMvc.perform(get(API_URL_PATH + "/" + dogDTO.name())
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name", Matchers.is(dogDTO.name())))
                 .andExpect(jsonPath("$.age", Matchers.is(dogDTO.age())))
@@ -108,9 +105,79 @@ public class DogControllerTest {
             mockMvc.perform(get(API_URL_PATH + "/" + dogDTO.name())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isNotFound());
-        }catch (Exception e) {
+        } catch (Exception e) {
             System.out.println("gotcha");
         }
     }
 
+    @Test
+    void whenGetMethodIsCalledWithoutParamsThenItReturnsOkStatus() throws Exception {
+        //given
+        DogDTO dogDTO = DogDTOBuilder.builder().build().toDogDTO();
+
+        when(dogService.listAll()).thenReturn(Collections.singletonList(dogDTO));
+
+        mockMvc.perform(get(API_URL_PATH)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name", Matchers.is(dogDTO.name())))
+                .andExpect(jsonPath("$[0].age", Matchers.is(dogDTO.age())))
+                .andExpect(jsonPath("$[0].size", Matchers.is(dogDTO.size().toString())));
+    }
+
+    @Test
+    void whenDeleteMethodIsCalledWithValidIDThenItReturnsNoContentStatus() throws Exception {
+        doNothing().when(dogService).deleteById(VALID_ID);
+
+        mockMvc.perform(delete(API_URL_PATH + "/" + VALID_ID)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void whenDeleteMethodIsCalledWithInvalidIDThenItShouldThrowAnException() throws Exception {
+        try {
+            doThrow(DogNotFoundException.class).when(dogService).deleteById(INVALID_ID);
+
+            mockMvc.perform(delete(API_URL_PATH + "/" + INVALID_ID)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isNotFound());
+        } catch (Exception e) {
+            System.out.println("gotcha");
+        }
+    }
+
+    @Test
+    void whenPUTMethodIsCalledWithValidIDThenOkStatusIsReturned() throws Exception {
+        //given
+        DogDTO dogDTO = DogDTOBuilder.builder().build().toDogDTO();
+
+        //when
+        doNothing().when(dogService).updateDogsRecord(VALID_ID, dogDTO);
+
+        //then
+        mockMvc.perform(put(API_URL_PATH + "/" + VALID_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(dogDTO)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void whenPUTMethodIsCalledWithInvalidIDThenItShouldThrowAnException() throws Exception {
+        try {
+            //given
+            DogDTO dogDTO = DogDTOBuilder.builder().build().toDogDTO();
+
+            //when
+            doThrow(new DogNotFoundException("")).when(dogService).updateDogsRecord(INVALID_ID, dogDTO);
+
+            //then
+            mockMvc.perform(put(API_URL_PATH + "/" + INVALID_ID)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(asJsonString(dogDTO)))
+                    .andExpect(status().isNotFound());
+        } catch (Exception e) {
+            System.out.println("gotcha");
+        }
+    }
 }
