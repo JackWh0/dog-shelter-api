@@ -34,7 +34,7 @@ public class DogController {
     }
 
     @PostMapping
-    public ResponseEntity<DogDTO> registerDoString(@RequestBody @Valid DogDTO dogDTO, UriComponentsBuilder uriComponentsBuilder) {
+    public ResponseEntity<DogDTO> registerDogsRecord(@RequestBody @Valid DogDTO dogDTO, UriComponentsBuilder uriComponentsBuilder) {
         var dog = dogService.registerDog(dogDTO);
         var uri = uriComponentsBuilder.path("/dog/").buildAndExpand(dog.id()).toUri();
                                     

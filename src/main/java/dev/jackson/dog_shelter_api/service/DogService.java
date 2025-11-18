@@ -59,9 +59,9 @@ public class DogService {
         dogRepository.deleteById(id);
     }
 
+    @Transactional
     public void updateDogsRecord(Long id, DogDTO dogDTO) {
         if(id.equals(checkIfDogHasRecord(id).getId())) {
-            log.info("Updating Dog's record: id={}", id);
             verifyDogAge(dogDTO.age());
             verifyDogGender(dogDTO.gender());
 
@@ -70,6 +70,7 @@ public class DogService {
 
             dog.setId(id);
             dogRepository.save(dog);
+            log.info("Updating Dog's record: id={}", id);
         }
     }
 
